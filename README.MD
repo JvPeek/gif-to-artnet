@@ -1,4 +1,4 @@
-#gif-to-artnet
+# gif-to-artnet
 
 gets images (gif, jpeg, png) via http, resizes them to your LED matrix and displays them via artnet for a certain amount of time. Can do animated gifs. 
 
