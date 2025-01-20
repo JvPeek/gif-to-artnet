@@ -27,8 +27,8 @@ func (a *QueueApp) handleAdd(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte(fmt.Sprintf("something went wrong: %s", err)))
 			return
 		}
-
 		inputGIF, err := gif.DecodeAll(resp.Body)
+
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("something went wrong: %s", err)))
@@ -87,16 +87,15 @@ func (a *QueueApp) handleShow(w http.ResponseWriter, req *http.Request) {
 
 	if len(a.queue) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Geh weg"))
+		w.Write([]byte("Queue ist leer"))
 
 		return
 	}
 
 	data := a.queue[0]
-	a.queue = a.queue[1:]
 
 	w.Header().Set("Content-Type", "image/gif")
-	// imaging.Encode(w, data, imaging.GIF)
+
 	gif.EncodeAll(w, data)
 
 }
@@ -109,55 +108,21 @@ func (a *QueueApp) Serve() error {
 	return err
 }
 
-var meinChannel chan int
-var zweiterChannel chan int
-
-func irgendEineGoroutine() {
-	counter := 0
+func ledWorker(app *QueueApp) {
 
 	for {
-		fmt.Println("hier passiert irgendwas")
+		//fmt.Printf("Current queue: %v\n", len(app.queue))
+		if len(app.queue) > 0 {
 
-		<-time.After(2 * time.Second)
-
-		// jetzt schreiben wir einfach alle zwei Sekunden in diesen Channel
-		meinChannel <- counter
-		fmt.Println("ich habe gerade in den channel geschrieben", counter)
-		counter++
-	}
-}
-
-func zweiteGoRoutine() {
-	for {
-		select {
-		case value := <-meinChannel:
-			fmt.Println("Ich bekam aus dem ersten Channel", value)
-		case value := <-zweiterChannel:
-			fmt.Println("Ich bekam aus dem zweiten Channel", value)
 		}
-	}
-}
-
-func dritteGoRoutine() {
-	counter := 0
-
-	for {
-		<-time.After(3 * time.Second)
-		zweiterChannel <- counter
-		counter++
+		time.Sleep(200 * time.Millisecond)
 	}
 }
 
 func main() {
 	app := &QueueApp{}
 
-	meinChannel = make(chan int)
-	zweiterChannel = make(chan int)
-
-	go irgendEineGoroutine()
-	go dritteGoRoutine()
-	go zweiteGoRoutine()
-
+	go ledWorker(app)
 	if err := app.Serve(); err != nil {
 		panic(err)
 	}
